@@ -1,4 +1,5 @@
 const VALIDATOR = require("validatorjs");
+const JWT = require("jsonwebtoken");
 
 // Response Codes
 const HTTP_STATUS_CODE = {
@@ -19,4 +20,4 @@ const TOKEN_EXPIRY = {
   FORGOT_PASSWORD_TOKEN: 60 * 60, // 1 hour
 };
 
-module.exports = { HTTP_STATUS_CODE, VALIDATOR, TOKEN_EXPIRY };
+module.exports = { HTTP_STATUS_CODE, VALIDATOR, TOKEN_EXPIRY, JWT };

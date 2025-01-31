@@ -8,6 +8,7 @@ const {
   VALIDATOR,
   TOKEN_EXPIRY,
 } = require("../../constant/constant");
+const { generateToken } = require("../helpers/auth/generateToken");
 
 const signup = async (req, res) => {
   try {
@@ -39,7 +40,7 @@ const signup = async (req, res) => {
       });
     }
 
-    // find weather the user exists
+    // find whether the user exists
     let user = await User.findOne({
       username,
     });
@@ -121,7 +122,7 @@ const login = async (req, res) => {
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compareSync(password, user.password);
 
     if (!isPasswordValid) {
       return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
@@ -132,21 +133,21 @@ const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: TOKEN_EXPIRY.ACCESS_TOKEN,
-      }
-    );
+    /* The `payload` object is used to store the user data that will be used to generate a token.*/
+    const payload = {
+      id: user._id,
+      // username: username,
+      // name: user.name,
+      email: user.email.toLowerCase(),
+    };
 
-    user.token = token;
-    await user.save();
+    /* This code is generating access and refresh tokens for the user.*/
+    const token = await generateToken(payload, TOKEN_EXPIRY.ACCESS_TOKEN);
+
+    /* The code is updating the user's token and last
+         login timestamp in the database. */
+    // await user.update({ token, lastLoginAt: Math.floor(Date.now() / 1000) });
+    await user.update({ token });
 
     return res.status(HTTP_STATUS_CODE.OK).json({
       status: HTTP_STATUS_CODE.OK,
@@ -167,4 +168,82 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { signup, login };
+const logout = async (req, res) => {
+  try {
+    const userId = req.me.id;
+
+    const findUser = await User.findById(userId);
+
+    if (!findUser) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
+    await User.update(
+      {
+        token: null,
+      },
+      {
+        where: {
+          id: userId,
+        },
+      }
+    );
+
+    return res.status(HTTP_STATUS_CODE.OK).json({
+      status: HTTP_STATUS_CODE.OK,
+      message: "User logged out successfully",
+      data: "",
+      error: "",
+    });
+  } catch (error) {
+    //return error response
+    return res.status(HTTP_STATUS_CODE.SERVER_ERROR).json({
+      status: HTTP_STATUS_CODE.SERVER_ERROR,
+      message: "",
+      data: "",
+      error: error.message,
+    });
+  }
+};
+
+const checkUsername = async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    // Validate input
+    if (!username) {
+      return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+        status: HTTP_STATUS_CODE.BAD_REQUEST,
+        message: "Username is required.",
+        data: "",
+        error: "",
+      });
+    }
+
+    const user = await User.findOne({
+      username,
+    });
+
+    // Respond with availability status
+    const isUsernameAvailable = !user;
+    return res.status(HTTP_STATUS_CODE.OK).json({
+      status: HTTP_STATUS_CODE.OK,
+      message: isUsernameAvailable
+        ? "Username is available"
+        : "Username is already taken",
+      data: { isUsernameAvailable },
+      error: "",
+    });
+  } catch (error) {
+    //return error response
+    return res.status(HTTP_STATUS_CODE.SERVER_ERROR).json({
+      status: HTTP_STATUS_CODE.SERVER_ERROR,
+      message: "",
+      data: "",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { signup, login, logout, checkUsername };
