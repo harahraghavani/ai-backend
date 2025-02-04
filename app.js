@@ -1,4 +1,5 @@
 const authRouter = require("./api/routes/auth.router");
+const textRouter = require("./api/routes/text.router");
 
 try {
   // Load environment variables
@@ -33,6 +34,7 @@ try {
 
   // Routes
   EXPRESS_APP.use("/api/auth", authRouter);
+  EXPRESS_APP.use("/api", textRouter);
 
   // App Listen
   EXPRESS_APP.listen(process.env.PORT);
