@@ -1,5 +1,4 @@
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
 const { VALIDATION_RULES } = require("../../config/validationRules");
@@ -136,8 +135,8 @@ const login = async (req, res) => {
     /* The `payload` object is used to store the user data that will be used to generate a token.*/
     const payload = {
       id: user._id,
-      // username: username,
-      // name: user.name,
+      username: username,
+      name: user.name,
       email: user.email.toLowerCase(),
     };
 
@@ -146,8 +145,7 @@ const login = async (req, res) => {
 
     /* The code is updating the user's token and last
          login timestamp in the database. */
-    // await user.update({ token, lastLoginAt: Math.floor(Date.now() / 1000) });
-    await user.update({ token });
+    await User.updateOne({ _id: user._id }, { token });
 
     return res.status(HTTP_STATUS_CODE.OK).json({
       status: HTTP_STATUS_CODE.OK,
@@ -179,16 +177,8 @@ const logout = async (req, res) => {
         message: "User not found",
       });
     }
-    await User.update(
-      {
-        token: null,
-      },
-      {
-        where: {
-          id: userId,
-        },
-      }
-    );
+
+    await User.updateOne({ _id: userId }, { token: null });
 
     return res.status(HTTP_STATUS_CODE.OK).json({
       status: HTTP_STATUS_CODE.OK,
@@ -215,7 +205,7 @@ const checkUsername = async (req, res) => {
     if (!username) {
       return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
         status: HTTP_STATUS_CODE.BAD_REQUEST,
-        message: "Username is required.",
+        message: "Username is required",
         data: "",
         error: "",
       });
@@ -227,6 +217,7 @@ const checkUsername = async (req, res) => {
 
     // Respond with availability status
     const isUsernameAvailable = !user;
+
     return res.status(HTTP_STATUS_CODE.OK).json({
       status: HTTP_STATUS_CODE.OK,
       message: isUsernameAvailable
