@@ -39,15 +39,15 @@ const signup = async (req, res) => {
       });
     }
 
-    // find whether the user exists
+    // Check if the user already exists by either username or email
     let user = await User.findOne({
-      username,
+      $or: [{ username }, { email }],
     });
 
     if (user) {
       return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
         status: HTTP_STATUS_CODE.BAD_REQUEST,
-        message: "User already exists, please login",
+        message: "User with this username or email already exists",
         data: "",
         error: "",
       });
@@ -173,7 +173,7 @@ const logout = async (req, res) => {
     const findUser = await User.findById(userId);
 
     if (!findUser) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
         message: "User not found",
       });
     }

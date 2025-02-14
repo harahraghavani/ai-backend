@@ -1,4 +1,5 @@
 const authRouter = require("./api/routes/auth.router");
+const imageRouter = require("./api/routes/image.router");
 const textRouter = require("./api/routes/text.router");
 
 try {
@@ -35,6 +36,7 @@ try {
   // Routes
   EXPRESS_APP.use("/api/auth", authRouter);
   EXPRESS_APP.use("/api", textRouter);
+  EXPRESS_APP.use("/api", imageRouter);
 
   // App Listen
   EXPRESS_APP.listen(process.env.PORT);
